@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# DB Credentials — never commit this
+config/db_config.py
+
+# OS
+.DS_Store
+Thumbs.db
