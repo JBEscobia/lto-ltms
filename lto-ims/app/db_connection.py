@@ -60,7 +60,9 @@ def get_connection():
         port=db_config.DB_PORT,         # e.g. 3306 (MariaDB default port)
         database=db_config.DB_NAME,     # e.g. "lto_ims"
         user=db_config.DB_USER,         # e.g. "lto_user"
-        password=db_config.DB_PASSWORD  # e.g. "pass1234"
+        password=db_config.DB_PASSWORD,  # e.g. "pass1234"
+        autocommit=True,                      # Automatically save changes without needing connection.commit()
+        connection_timeout=300               # Wait up to 5 minutes for the connection to succeed before giving up
     )
     return connection
 
