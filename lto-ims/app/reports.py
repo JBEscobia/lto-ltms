@@ -296,6 +296,8 @@ def report_violations_by_driver(connection, license_number, date_from, date_to):
     try:
         cursor.execute(query, (license_number, date_from, date_to))
         rows = cursor.fetchall()
+        while cursor.nextset():
+            pass
         return (True, rows)
     except Exception as e:
         return (False, str(e))
@@ -332,6 +334,8 @@ def report_violations_per_type(connection, year):
     try:
         cursor.execute(query, (year,))
         rows = cursor.fetchall()
+        while cursor.nextset():
+            pass
         return (True, rows)
     except Exception as e:
         return (False, str(e))
@@ -371,6 +375,8 @@ def report_vehicles_in_violations_by_location(connection, location_keyword):
     try:
         cursor.execute(query, (location_keyword,))
         rows = cursor.fetchall()
+        while cursor.nextset():
+            pass
         return (True, rows)
     except Exception as e:
         return (False, str(e))
