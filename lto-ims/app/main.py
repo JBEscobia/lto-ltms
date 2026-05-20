@@ -1,9 +1,9 @@
-# Entry point for the LTO IMS terminal application.
+#main.py - entry point for the lto ims terminal app
 
 from app import db_connection
 from app import driver, vehicle, registration, violation, reports
+from app import ascii_art
 
-#helper functions for printing tables and pausing
 def pause():
     input("\nPress Enter to continue...")
 
@@ -11,7 +11,9 @@ def print_separator():
     print("-" * 60)
 
 def print_rows(rows, headers):
+    #prints a formatted table of rows with the given headers
     if not rows:
+        print(ascii_art.SAD)
         print("No records found.")
         return
     print_separator()
@@ -22,9 +24,19 @@ def print_rows(rows, headers):
     print_separator()
     print(f"{len(rows)} record(s) found.")
 
+def print_success(msg):
+    print(ascii_art.HAPPI)
+    print(msg)
+
+def print_error(msg):
+    print(ascii_art.BEAT_UP)
+    print(msg)
+
+def print_deleted(msg):
+    print(ascii_art.SMUG)
+    print(msg)
 
 
-#menu for driver management
 def menu_driver(conn):
     while True:
         print("\n--- Driver Management ---")
@@ -48,13 +60,13 @@ def menu_driver(conn):
             expiration_date = input("Expiration Date (YYYY-MM-DD): ").strip()
             if not all([license_number, full_name, date_of_birth, sex, address,
                         license_type, license_status, issuance_date, expiration_date]):
-                print("All fields are required. Please try again.")
+                print_error("All fields are required. Please try again.")
                 pause()
                 continue
             ok, msg = driver.add_driver(conn, license_number, full_name, date_of_birth,
                                         sex, address, license_type, license_status,
                                         issuance_date, expiration_date)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "2":
@@ -73,7 +85,7 @@ def menu_driver(conn):
             ok, msg = driver.update_driver(conn, license_number, full_name, date_of_birth,
                                            sex, address, license_type, license_status,
                                            issuance_date, expiration_date)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "3":
@@ -82,7 +94,7 @@ def menu_driver(conn):
             confirm = input(f"Are you sure you want to delete '{license_number}'? (yes/no): ").strip().lower()
             if confirm == "yes":
                 ok, msg = driver.delete_driver(conn, license_number)
-                print(msg)
+                print_deleted(msg) if ok else print_error(msg)
             else:
                 print("Cancelled.")
             pause()
@@ -96,14 +108,13 @@ def menu_driver(conn):
                            "Address", "Type", "Status", "Issued", "Expires"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "0":
             break
 
 
-#menu for vehicle management
 def menu_vehicle(conn):
     while True:
         print("\n--- Vehicle Management ---")
@@ -127,17 +138,17 @@ def menu_vehicle(conn):
             color          = input("Color: ").strip()
             if not all([plate_number, license_number, engine_number, chassis_number,
                         vehicle_type, make, model_name, year_model, color]):
-                print("All fields are required. Please try again.")
+                print_error("All fields are required. Please try again.")
                 pause()
                 continue
             if not year_model.isdigit():
-                print("Year Model must be a number. Please try again.")
+                print_error("Year Model must be a number. Please try again.")
                 pause()
                 continue
             ok, msg = vehicle.add_vehicle(conn, plate_number, license_number, engine_number,
                                           chassis_number, vehicle_type, make, model_name,
                                           int(year_model), color)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "2":
@@ -157,7 +168,7 @@ def menu_vehicle(conn):
             ok, msg = vehicle.update_vehicle(conn, plate_number, license_number, engine_number,
                                              chassis_number, vehicle_type, make, model_name,
                                              year_model, color)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "3":
@@ -166,7 +177,7 @@ def menu_vehicle(conn):
             confirm = input(f"Are you sure you want to delete '{plate_number}'? (yes/no): ").strip().lower()
             if confirm == "yes":
                 ok, msg = vehicle.delete_vehicle(conn, plate_number)
-                print(msg)
+                print_deleted(msg) if ok else print_error(msg)
             else:
                 print("Cancelled.")
             pause()
@@ -180,14 +191,13 @@ def menu_vehicle(conn):
                            "Type", "Make", "Model", "Year", "Color"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "0":
             break
 
 
-# menu for regustration management
 def menu_registration(conn):
     while True:
         print("\n--- Registration Management ---")
@@ -207,12 +217,12 @@ def menu_registration(conn):
             reg_status          = input("Status (Active / Expired / Suspended): ").strip()
             if not all([registration_number, plate_number, registration_date,
                         expiration_date, reg_status]):
-                print("All fields are required. Please try again.")
+                print_error("All fields are required. Please try again.")
                 pause()
                 continue
             ok, msg = registration.add_registration(conn, registration_number, plate_number,
                                                     registration_date, expiration_date, reg_status)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "2":
@@ -226,7 +236,7 @@ def menu_registration(conn):
             reg_status          = input("New Status (blank to skip): ").strip() or None
             ok, msg = registration.update_registration(conn, registration_number, plate_number,
                                                        registration_date, expiration_date, reg_status)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "3":
@@ -235,7 +245,7 @@ def menu_registration(conn):
             confirm = input(f"Are you sure you want to delete '{registration_number}'? (yes/no): ").strip().lower()
             if confirm == "yes":
                 ok, msg = registration.delete_registration(conn, registration_number)
-                print(msg)
+                print_deleted(msg) if ok else print_error(msg)
             else:
                 print("Cancelled.")
             pause()
@@ -251,14 +261,13 @@ def menu_registration(conn):
                 headers = ["Reg. Number", "Plate No.", "Reg. Date", "Exp. Date", "Status"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "0":
             break
 
 
-#menu for violation management
 def menu_violation(conn):
     while True:
         print("\n--- Violation Management ---")
@@ -281,12 +290,12 @@ def menu_violation(conn):
             officer        = input("Apprehending Officer (blank if unknown): ").strip() or None
             if not all([ticket_number, license_number, plate_number,
                         v_type, v_date, location, v_status]):
-                print("All fields are required. Please try again.")
+                print_error("All fields are required. Please try again.")
                 pause()
                 continue
             ok, msg = violation.add_violation(conn, ticket_number, license_number, plate_number,
                                               v_type, v_date, location, v_status, officer)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "2":
@@ -303,7 +312,7 @@ def menu_violation(conn):
             v_status       = input("New Status (blank to skip): ").strip() or None
             ok, msg = violation.update_violation(conn, ticket_number, license_number, plate_number,
                                                  v_type, v_date, location, officer, v_status)
-            print(msg)
+            print_success(msg) if ok else print_error(msg)
             pause()
 
         elif choice == "3":
@@ -312,7 +321,7 @@ def menu_violation(conn):
             confirm = input(f"Are you sure you want to delete '{ticket_number}'? (yes/no): ").strip().lower()
             if confirm == "yes":
                 ok, msg = violation.delete_violation(conn, ticket_number)
-                print(msg)
+                print_deleted(msg) if ok else print_error(msg)
             else:
                 print("Cancelled.")
             pause()
@@ -332,14 +341,13 @@ def menu_violation(conn):
                            "Fine (PHP)", "Date", "Location", "Officer", "Status"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "0":
             break
 
 
-#menu of reports
 def menu_reports(conn):
     while True:
         print("\n--- Reports ---")
@@ -371,7 +379,7 @@ def menu_reports(conn):
                            "Vehicles", "Violations"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "2":
@@ -383,7 +391,7 @@ def menu_reports(conn):
                            "Type", "Make", "Model", "Year", "Color"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "3":
@@ -396,7 +404,7 @@ def menu_reports(conn):
                            "Reg. Date", "Exp. Date", "Status"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "4":
@@ -407,7 +415,7 @@ def menu_reports(conn):
                            "Status", "Expiration Date"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "5":
@@ -422,7 +430,7 @@ def menu_reports(conn):
                            "Date", "Location", "Officer", "Status"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "6":
@@ -433,7 +441,7 @@ def menu_reports(conn):
                 headers = ["Violation Type", "Total Violations", "Total Fines (PHP)"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "7":
@@ -445,7 +453,7 @@ def menu_reports(conn):
                            "Driver Name", "License No.", "Violation Count"]
                 print_rows(result, headers)
             else:
-                print(f"Error: {result}")
+                print_error(f"Error: {result}")
             pause()
 
         elif choice == "0":
@@ -453,6 +461,7 @@ def menu_reports(conn):
 
 
 def main():
+    print(ascii_art.THUMBS_UP)
     print("=" * 60)
     print("   LTO Information Management System")
     print("   CMSC 127 — 2nd Semester AY 2025-2026")
@@ -462,7 +471,7 @@ def main():
         conn = db_connection.get_connection()
         print("Connected to database.\n")
     except Exception as e:
-        print(f"Failed to connect to database: {e}")
+        print_error(f"Failed to connect to database: {e}")
         return
 
     while True:
