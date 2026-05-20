@@ -1,8 +1,40 @@
 #main.py - entry point for the lto ims terminal app
 
+from datetime import datetime, date
 from app import db_connection
 from app import driver, vehicle, registration, violation, reports
 from app import ascii_art
+
+def parse_date(date_str):
+    #parses a YYYY-MM-DD string into a date object, returns None if invalid
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+def validate_not_future(date_str, field_name):
+    #checks that a date is not in the future
+    d = parse_date(date_str)
+    if d is None:
+        return f"Invalid date format for {field_name}. Use YYYY-MM-DD."
+    if d > date.today():
+        return f"{field_name} cannot be in the future."
+    return None
+
+def validate_date_format(date_str, field_name):
+    #checks that a date string is valid without restricting range
+    d = parse_date(date_str)
+    if d is None:
+        return f"Invalid date format for {field_name}. Use YYYY-MM-DD."
+    return None
+
+def validate_before(earlier_str, later_str, earlier_name, later_name):
+    #checks that the first date comes before or equals the second
+    d1 = parse_date(earlier_str)
+    d2 = parse_date(later_str)
+    if d1 and d2 and d1 > d2:
+        return f"{earlier_name} cannot be after {later_name}."
+    return None
 
 def pause():
     input("\nPress Enter to continue...")
@@ -63,6 +95,14 @@ def menu_driver(conn):
                 print_error("All fields are required. Please try again.")
                 pause()
                 continue
+            err = (validate_not_future(date_of_birth, "Date of Birth")
+                   or validate_date_format(issuance_date, "Issuance Date")
+                   or validate_date_format(expiration_date, "Expiration Date")
+                   or validate_before(issuance_date, expiration_date, "Issuance Date", "Expiration Date"))
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, msg = driver.add_driver(conn, license_number, full_name, date_of_birth,
                                         sex, address, license_type, license_status,
                                         issuance_date, expiration_date)
@@ -82,6 +122,19 @@ def menu_driver(conn):
             license_status  = input("New License Status (blank to skip): ").strip() or None
             issuance_date   = input("New Issuance Date (blank to skip): ").strip() or None
             expiration_date = input("New Expiration Date (blank to skip): ").strip() or None
+            err = None
+            if date_of_birth:
+                err = validate_not_future(date_of_birth, "Date of Birth")
+            if not err and issuance_date:
+                err = validate_date_format(issuance_date, "Issuance Date")
+            if not err and expiration_date:
+                err = validate_date_format(expiration_date, "Expiration Date")
+            if not err and issuance_date and expiration_date:
+                err = validate_before(issuance_date, expiration_date, "Issuance Date", "Expiration Date")
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, msg = driver.update_driver(conn, license_number, full_name, date_of_birth,
                                            sex, address, license_type, license_status,
                                            issuance_date, expiration_date)
@@ -220,6 +273,13 @@ def menu_registration(conn):
                 print_error("All fields are required. Please try again.")
                 pause()
                 continue
+            err = (validate_date_format(registration_date, "Registration Date")
+                   or validate_date_format(expiration_date, "Expiration Date")
+                   or validate_before(registration_date, expiration_date, "Registration Date", "Expiration Date"))
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, msg = registration.add_registration(conn, registration_number, plate_number,
                                                     registration_date, expiration_date, reg_status)
             print_success(msg) if ok else print_error(msg)
@@ -234,6 +294,17 @@ def menu_registration(conn):
             registration_date   = input("New Registration Date (blank to skip): ").strip() or None
             expiration_date     = input("New Expiration Date (blank to skip): ").strip() or None
             reg_status          = input("New Status (blank to skip): ").strip() or None
+            err = None
+            if registration_date:
+                err = validate_date_format(registration_date, "Registration Date")
+            if not err and expiration_date:
+                err = validate_date_format(expiration_date, "Expiration Date")
+            if not err and registration_date and expiration_date:
+                err = validate_before(registration_date, expiration_date, "Registration Date", "Expiration Date")
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, msg = registration.update_registration(conn, registration_number, plate_number,
                                                        registration_date, expiration_date, reg_status)
             print_success(msg) if ok else print_error(msg)
@@ -293,6 +364,11 @@ def menu_violation(conn):
                 print_error("All fields are required. Please try again.")
                 pause()
                 continue
+            err = validate_not_future(v_date, "Violation Date")
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, msg = violation.add_violation(conn, ticket_number, license_number, plate_number,
                                               v_type, v_date, location, v_status, officer)
             print_success(msg) if ok else print_error(msg)
@@ -310,6 +386,12 @@ def menu_violation(conn):
             location       = input("New Location (blank to skip): ").strip() or None
             officer        = input("New Apprehending Officer (blank to skip): ").strip() or None
             v_status       = input("New Status (blank to skip): ").strip() or None
+            if v_date:
+                err = validate_not_future(v_date, "Violation Date")
+                if err:
+                    print_error(err)
+                    pause()
+                    continue
             ok, msg = violation.update_violation(conn, ticket_number, license_number, plate_number,
                                                  v_type, v_date, location, officer, v_status)
             print_success(msg) if ok else print_error(msg)
@@ -397,6 +479,11 @@ def menu_reports(conn):
         elif choice == "3":
             print("\n-- Report: Expired Registrations --")
             as_of_date = input("As of date (YYYY-MM-DD): ").strip()
+            err = validate_date_format(as_of_date, "As of date")
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, result = reports.report_expired_registrations(conn, as_of_date)
             if ok:
                 headers = ["Reg. No.", "Plate No.", "Type", "Make", "Model",
@@ -423,6 +510,13 @@ def menu_reports(conn):
             license_number = input("Driver's License Number: ").strip()
             date_from      = input("From date (YYYY-MM-DD): ").strip()
             date_to        = input("To date (YYYY-MM-DD): ").strip()
+            err = (validate_date_format(date_from, "From date")
+                   or validate_date_format(date_to, "To date")
+                   or validate_before(date_from, date_to, "From date", "To date"))
+            if err:
+                print_error(err)
+                pause()
+                continue
             ok, result = reports.report_violations_by_driver(conn, license_number,
                                                              date_from, date_to)
             if ok:
