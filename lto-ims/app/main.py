@@ -96,7 +96,7 @@ def menu_driver(conn):
                 pause()
                 continue
             err = (validate_not_future(date_of_birth, "Date of Birth")
-                   or validate_date_format(issuance_date, "Issuance Date")
+                   or validate_not_future(issuance_date, "Issuance Date")
                    or validate_date_format(expiration_date, "Expiration Date")
                    or validate_before(issuance_date, expiration_date, "Issuance Date", "Expiration Date"))
             if err:
@@ -126,7 +126,7 @@ def menu_driver(conn):
             if date_of_birth:
                 err = validate_not_future(date_of_birth, "Date of Birth")
             if not err and issuance_date:
-                err = validate_date_format(issuance_date, "Issuance Date")
+                err = validate_not_future(issuance_date, "Issuance Date")
             if not err and expiration_date:
                 err = validate_date_format(expiration_date, "Expiration Date")
             if not err and issuance_date and expiration_date:
@@ -273,7 +273,7 @@ def menu_registration(conn):
                 print_error("All fields are required. Please try again.")
                 pause()
                 continue
-            err = (validate_date_format(registration_date, "Registration Date")
+            err = (validate_not_future(registration_date, "Registration Date")
                    or validate_date_format(expiration_date, "Expiration Date")
                    or validate_before(registration_date, expiration_date, "Registration Date", "Expiration Date"))
             if err:
@@ -296,7 +296,7 @@ def menu_registration(conn):
             reg_status          = input("New Status (blank to skip): ").strip() or None
             err = None
             if registration_date:
-                err = validate_date_format(registration_date, "Registration Date")
+                err = validate_not_future(registration_date, "Registration Date")
             if not err and expiration_date:
                 err = validate_date_format(expiration_date, "Expiration Date")
             if not err and registration_date and expiration_date:
@@ -510,7 +510,7 @@ def menu_reports(conn):
             license_number = input("Driver's License Number: ").strip()
             date_from      = input("From date (YYYY-MM-DD): ").strip()
             date_to        = input("To date (YYYY-MM-DD): ").strip()
-            err = (validate_date_format(date_from, "From date")
+            err = (validate_not_future(date_from, "From date")
                    or validate_date_format(date_to, "To date")
                    or validate_before(date_from, date_to, "From date", "To date"))
             if err:
