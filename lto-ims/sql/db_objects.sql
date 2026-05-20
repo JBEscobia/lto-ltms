@@ -1,15 +1,10 @@
--- LTO IMS Database Objects
--- Views, Stored Procedures, and Triggers
+-- views, stored procedures, and triggers for the lto ims
 
 USE lto_ims;
 
--- ============================================================
--- VIEWS
--- ============================================================
+-- views
 
--- 1. Driver Summary View
---    Joins drivers with their vehicle count and violation count.
---    Useful for quick lookups and for Report #1 filters.
+-- driver info with computed age, vehicle count, and violation count
 CREATE OR REPLACE VIEW driver_summary AS
 SELECT
     d.license_number,
@@ -33,8 +28,7 @@ GROUP BY
     d.issuance_date, d.expiration_date;
 
 
--- 2. Expired Registrations View
---    Shows vehicles whose registration has expired (Report #3 helper).
+-- vehicles with expired registrations
 CREATE OR REPLACE VIEW expired_registrations AS
 SELECT
     r.registration_number,
@@ -56,9 +50,7 @@ WHERE r.expiration_date < CURDATE()
    OR r.registration_status = 'Expired';
 
 
--- 3. Violation Details View
---    Flattens violation info with driver name, vehicle info, and fine amount.
---    Useful for Reports #5, #6, and #7.
+-- flattened violation info with driver, vehicle, and fine details
 CREATE OR REPLACE VIEW violation_details AS
 SELECT
     vl.violation_ticket_number,
@@ -79,11 +71,9 @@ JOIN VEHICLE v            ON vl.plate_number   = v.plate_number
 JOIN VIOLATION_TYPE_LIST vtl ON vl.violation_type  = vtl.violation_type;
 
 
--- ============================================================
--- STORED PROCEDURES
--- ============================================================
+-- stored procedures
 
--- 1. Get violations by driver within a date range (Report #5)
+-- get violations by a driver within a date range
 DROP PROCEDURE IF EXISTS get_driver_violations;
 DELIMITER //
 CREATE PROCEDURE get_driver_violations(
@@ -109,7 +99,7 @@ END //
 DELIMITER ;
 
 
--- 2. Get violation counts per type for a given year (Report #6)
+-- get violation counts grouped by type for a given year
 DROP PROCEDURE IF EXISTS get_violation_counts_by_year;
 DELIMITER //
 CREATE PROCEDURE get_violation_counts_by_year(
@@ -128,7 +118,7 @@ END //
 DELIMITER ;
 
 
--- 3. Get all vehicles involved in violations within a city/region (Report #7)
+-- get vehicles involved in violations matching a location keyword
 DROP PROCEDURE IF EXISTS get_vehicles_with_violations_in_location;
 DELIMITER //
 CREATE PROCEDURE get_vehicles_with_violations_in_location(
@@ -151,13 +141,9 @@ END //
 DELIMITER ;
 
 
--- ============================================================
--- TRIGGERS
--- ============================================================
+-- triggers
 
--- 1. Auto-expire registration status when expiration date is in the past
---    Fires on INSERT so that any newly inserted registration with
---    a past expiration_date is automatically marked 'Expired'.
+-- auto-set registration status to expired if expiration date is past (on insert)
 DROP TRIGGER IF EXISTS trg_registration_auto_expire_insert;
 DELIMITER //
 CREATE TRIGGER trg_registration_auto_expire_insert
@@ -170,7 +156,7 @@ BEGIN
 END //
 DELIMITER ;
 
--- Same logic on UPDATE
+-- same check on update
 DROP TRIGGER IF EXISTS trg_registration_auto_expire_update;
 DELIMITER //
 CREATE TRIGGER trg_registration_auto_expire_update
@@ -183,10 +169,7 @@ BEGIN
 END //
 DELIMITER ;
 
-
--- 2. Auto-set driver license_status to 'Expired' if expiration date passes
---    Fires on UPDATE so that if someone changes the expiration date to
---    a past date, the status is corrected automatically.
+-- auto-expire driver license if expiration date is changed to a past date
 DROP TRIGGER IF EXISTS trg_driver_license_auto_expire;
 DELIMITER //
 CREATE TRIGGER trg_driver_license_auto_expire
